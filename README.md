@@ -2,15 +2,11 @@
 
 This is a plugin for [Obsidian](https://obsidian.md) which automatically sets the display text of anchor links.
 
-## What's New in v1.3
+## What's New in v1.4
 
 ### Added
 
-- Option to ignore links for embedded files. On by default.
-
-### Fixed
-
-- Minor performance improvements.
+- Option to use a file property instead of the note name.
 
 ## Description
 
