@@ -250,7 +250,8 @@ class AnchorDisplaySuggest extends EditorSuggest<AnchorDisplaySuggestion> {
 
 class AnchorDisplayTextSettingTab extends PluginSettingTab {
 	plugin: AnchorDisplayText;
-	private sepWarning: Notice | null = null;
+	private sepSetting: Setting | null = null;
+	private sepWarning: HTMLElement | null = null;
 
 	constructor(app: App, plugin: AnchorDisplayText) {
 		super(app, plugin);
@@ -266,14 +267,9 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 			}
 		}
 		if (validValue != value) {
-			if (!this.sepWarning) {
-				this.sepWarning = new Notice(`Separators cannot contain any of the following characters: []#^|`, 0);
-			}
+			this.sepWarning?.show();
 		} else {
-			if (this.sepWarning) {
-				this.sepWarning!.hide();
-				this.sepWarning = null;
-			}
+			this.sepWarning?.hide();
 		}
 		return validValue;
 	}
@@ -321,7 +317,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				});
 			});
 
-		new Setting(containerEl)
+		this.sepSetting = new Setting(containerEl)
 			.setName('Separator')
 			.setDesc('Choose what to insert between headings instead of #.')
 			.addText(text => {
@@ -331,6 +327,37 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 					this.plugin.saveSettings();
 				});
 			});
+
+
+		// setting-item-error is the class that matches the `setErrorMessage` method of `Setting` 
+		// introduced in v1.13.0, but the class will probably be absent on earlier versions. 
+		// This is a recreation of it.
+		this.sepSetting.settingEl.style.flexWrap = 'wrap';
+		this.sepSetting.settingEl.style.rowGap = '0';
+
+		this.sepWarning = this.sepSetting.settingEl.createDiv({
+			attr: {
+				style: 'color: var(--text-warning);'
+					+ 'flex: 0 1 100%;'
+					+ 'min-width: 0;'
+					+ 'font-size: var(--font-ui-smaller);'
+					+ 'line-height: var(--line-height-tight);'
+					+ 'text-align: end;',
+			},
+		});
+
+		this.sepWarning.createSpan({
+			text: 'Separator cannot contain any of the following: ',
+		})
+
+		this.sepWarning.createSpan({
+			text: '[]#^|',
+			attr: {
+				style: 'font-family: var(--font-monospace); color: var(--text-error);',
+			},
+		});
+
+		this.sepWarning.hide();
 
 		new Setting(containerEl)
 			.setName('Enable notifications')
