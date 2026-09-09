@@ -124,7 +124,7 @@ export default class AnchorDisplayText extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    	this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<AnchorDisplayTextSettings> | null);
 	}
 
 	async saveSettings() {
@@ -223,8 +223,8 @@ class AnchorDisplaySuggest extends EditorSuggest<AnchorDisplaySuggestion> {
 		if (suggestionContainerEl!.childElementCount < 2) {
 			const promptInstructionsEl = suggestionContainerEl!.createDiv({cls: 'prompt-instructions'});
 			const instructionEl = promptInstructionsEl.createDiv({cls: 'prompt-instruction'});
-			instructionEl.createEl('span', {cls: 'prompt-instruction-command', text:'↵'});
-			instructionEl.createEl('span', {text:'to accept'});
+			instructionEl.createSpan({cls: 'prompt-instruction-command', text:'↵'});
+			instructionEl.createSpan({text:'to accept'});
 		}
 		// class of the passed element will be suggestion-item, but we need suggestion-item mod-complex
 		// to get appropriate styling
@@ -234,7 +234,7 @@ class AnchorDisplaySuggest extends EditorSuggest<AnchorDisplaySuggestion> {
 		suggestionContentEl.createDiv({cls: 'suggestion-note', text: value.source});
 	}
 
-	selectSuggestion(value: AnchorDisplaySuggestion, evt: MouseEvent | KeyboardEvent): void {
+	selectSuggestion(value: AnchorDisplaySuggestion): void {
 		const editor = this.context!.editor;
 		// if there is already display text, will need to overwrite it
 		const match = this.context!.query.match(RE_DISPLAY);
@@ -288,7 +288,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				dropdown.setValue(this.plugin.settings.includeNoteName);
 				dropdown.onChange(value => {
 					this.plugin.settings.includeNoteName = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 
@@ -299,7 +299,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				text.setValue(this.plugin.settings.titleProperty);
 				text.onChange(value => {
 					this.plugin.settings.titleProperty = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 
@@ -313,7 +313,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				dropdown.setValue(this.plugin.settings.whichHeadings);
 				dropdown.onChange(value => {
 					this.plugin.settings.whichHeadings = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 
@@ -324,26 +324,12 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				text.setValue(this.plugin.settings.sep);
 				text.onChange(value => {
 					this.plugin.settings.sep = this.validateSep(value);
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 
-
-		// setting-item-error is the class that matches the `setErrorMessage` method of `Setting` 
-		// introduced in v1.13.0, but the class will probably be absent on earlier versions. 
-		// This is a recreation of it.
-		this.sepSetting.settingEl.style.flexWrap = 'wrap';
-		this.sepSetting.settingEl.style.rowGap = '0';
-
 		this.sepWarning = this.sepSetting.settingEl.createDiv({
-			attr: {
-				style: 'color: var(--text-warning);'
-					+ 'flex: 0 1 100%;'
-					+ 'min-width: 0;'
-					+ 'font-size: var(--font-ui-smaller);'
-					+ 'line-height: var(--line-height-tight);'
-					+ 'text-align: end;',
-			},
+			cls: 'anchor-display-text-setting-item-error',
 		});
 
 		this.sepWarning.createSpan({
@@ -366,7 +352,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.includeNotice);
 				toggle.onChange(value => {
 					this.plugin.settings.includeNotice = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 
@@ -377,7 +363,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.suggest);
 				toggle.onChange(value => {
 					this.plugin.settings.suggest = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 					if (!this.plugin.suggestionsRegistered) {
 						this.plugin.registerEditorSuggest(new AnchorDisplaySuggest(this.plugin));
 						this.plugin.suggestionsRegistered = true;
@@ -392,7 +378,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.ignoreEmbedded);
 				toggle.onChange(value => {
 					this.plugin.settings.ignoreEmbedded = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 	}

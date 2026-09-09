@@ -1,0 +1,16 @@
+/* setting-item-error is the class that matches the `setErrorMessage` method of `Setting` 
+introduced in v1.13.0, but the class will probably be absent on earlier versions. 
+This is a recreation of it. */
+.anchor-display-text-setting-item {
+    flex-wrap: wrap;
+    row-gap: 0;
+}
+
+.anchor-display-text-setting-item-error {
+    color: var(--text-error);
+    flex: 0 1 100%;
+    min-width: 0;
+    font-size: var(--font-ui-smaller);
+    line-height: var(--line-height-tight);
+    text-align: end;
+}
