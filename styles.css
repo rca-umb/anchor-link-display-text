@@ -7,10 +7,15 @@ This is a recreation of it. */
 }
 
 .anchor-display-text-setting-item-error {
-    color: var(--text-error);
+    color: var(--text-warning);
     flex: 0 1 100%;
     min-width: 0;
     font-size: var(--font-ui-smaller);
     line-height: var(--line-height-tight);
     text-align: end;
+}
+
+.anchor-display-text-setting-item-error-code {
+    color: var(--text-error);
+    font-family: var(--font-monospace);
 }

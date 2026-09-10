@@ -318,6 +318,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 			});
 
 		this.sepSetting = new Setting(containerEl)
+			.setClass('anchor-display-text-setting-item')
 			.setName('Separator')
 			.setDesc('Choose what to insert between headings instead of #.')
 			.addText(text => {
@@ -338,9 +339,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 
 		this.sepWarning.createSpan({
 			text: '[]#^|',
-			attr: {
-				style: 'font-family: var(--font-monospace); color: var(--text-error);',
-			},
+			cls: 'anchor-display-text-setting-item-error-code',
 		});
 
 		this.sepWarning.hide();
