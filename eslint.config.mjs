@@ -55,7 +55,7 @@ export default defineConfig([
             "no-prototype-builtins": "off",
             "@typescript-eslint/no-empty-function": "off",
             // Turn off capitalization warnings for the word "cursor" because 
-            // we are not refering to the code editor.
+            // we are not referring to the code editor.
             "obsidianmd/ui/sentence-case": [
                 "warn", { ignoreRegex: ["cursor"] } 
             ],

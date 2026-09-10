@@ -251,6 +251,7 @@ class AnchorDisplaySuggest extends EditorSuggest<AnchorDisplaySuggestion> {
 class AnchorDisplayTextSettingTab extends PluginSettingTab {
 	plugin: AnchorDisplayText;
 	private sepSetting: Setting | null = null;
+	private sepInput: HTMLInputElement | null = null;
 	private sepWarning: HTMLElement | null = null;
 
 	constructor(app: App, plugin: AnchorDisplayText) {
@@ -267,8 +268,10 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 			}
 		}
 		if (validValue != value) {
+			this.sepInput?.setAttribute('aria-invalid', 'true');
 			this.sepWarning?.show();
 		} else {
+			this.sepInput?.setAttribute('aria-invalid', 'false');
 			this.sepWarning?.hide();
 		}
 		return validValue;
@@ -322,6 +325,8 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 			.setName('Separator')
 			.setDesc('Choose what to insert between headings instead of #.')
 			.addText(text => {
+				this.sepInput = text.inputEl;
+				this.sepInput.setAttribute('aria-describedby', 'anchor-display-text-separator-warning');
 				text.setValue(this.plugin.settings.sep);
 				text.onChange(value => {
 					this.plugin.settings.sep = this.validateSep(value);
@@ -332,6 +337,8 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 		this.sepWarning = this.sepSetting.settingEl.createDiv({
 			cls: 'anchor-display-text-setting-item-error',
 		});
+		this.sepWarning.id = 'anchor-display-text-separator-warning';
+		this.sepWarning.setAttribute('role', 'alert');
 
 		this.sepWarning.createSpan({
 			text: 'Separator cannot contain any of the following: ',
