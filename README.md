@@ -2,11 +2,15 @@
 
 This is a plugin for [Obsidian](https://obsidian.md) which automatically sets the display text of anchor links.
 
-## What's New in v1.4
+## What's New in v1.5
 
-### Added
+### Changed
 
-- Option to use a file property instead of the note name.
+- Illegal character warnings for separator inputs now show as an error message within the setting instead of a notification.
+
+### Fixed
+
+- Minor code changes to fix outstanding scorecard issues.
 
 ## Description
 

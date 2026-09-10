@@ -124,7 +124,7 @@ export default class AnchorDisplayText extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    	this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<AnchorDisplayTextSettings> | null);
 	}
 
 	async saveSettings() {
@@ -223,8 +223,8 @@ class AnchorDisplaySuggest extends EditorSuggest<AnchorDisplaySuggestion> {
 		if (suggestionContainerEl!.childElementCount < 2) {
 			const promptInstructionsEl = suggestionContainerEl!.createDiv({cls: 'prompt-instructions'});
 			const instructionEl = promptInstructionsEl.createDiv({cls: 'prompt-instruction'});
-			instructionEl.createEl('span', {cls: 'prompt-instruction-command', text:'↵'});
-			instructionEl.createEl('span', {text:'to accept'});
+			instructionEl.createSpan({cls: 'prompt-instruction-command', text:'↵'});
+			instructionEl.createSpan({text:'to accept'});
 		}
 		// class of the passed element will be suggestion-item, but we need suggestion-item mod-complex
 		// to get appropriate styling
@@ -234,7 +234,7 @@ class AnchorDisplaySuggest extends EditorSuggest<AnchorDisplaySuggestion> {
 		suggestionContentEl.createDiv({cls: 'suggestion-note', text: value.source});
 	}
 
-	selectSuggestion(value: AnchorDisplaySuggestion, evt: MouseEvent | KeyboardEvent): void {
+	selectSuggestion(value: AnchorDisplaySuggestion): void {
 		const editor = this.context!.editor;
 		// if there is already display text, will need to overwrite it
 		const match = this.context!.query.match(RE_DISPLAY);
@@ -250,7 +250,9 @@ class AnchorDisplaySuggest extends EditorSuggest<AnchorDisplaySuggestion> {
 
 class AnchorDisplayTextSettingTab extends PluginSettingTab {
 	plugin: AnchorDisplayText;
-	private sepWarning: Notice | null = null;
+	private sepSetting: Setting | null = null;
+	private sepInput: HTMLInputElement | null = null;
+	private sepWarning: HTMLElement | null = null;
 
 	constructor(app: App, plugin: AnchorDisplayText) {
 		super(app, plugin);
@@ -266,14 +268,11 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 			}
 		}
 		if (validValue != value) {
-			if (!this.sepWarning) {
-				this.sepWarning = new Notice(`Separators cannot contain any of the following characters: []#^|`, 0);
-			}
+			this.sepInput?.setAttribute('aria-invalid', 'true');
+			this.sepWarning?.show();
 		} else {
-			if (this.sepWarning) {
-				this.sepWarning!.hide();
-				this.sepWarning = null;
-			}
+			this.sepInput?.setAttribute('aria-invalid', 'false');
+			this.sepWarning?.hide();
 		}
 		return validValue;
 	}
@@ -292,7 +291,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				dropdown.setValue(this.plugin.settings.includeNoteName);
 				dropdown.onChange(value => {
 					this.plugin.settings.includeNoteName = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 
@@ -303,7 +302,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				text.setValue(this.plugin.settings.titleProperty);
 				text.onChange(value => {
 					this.plugin.settings.titleProperty = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 
@@ -317,20 +316,40 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				dropdown.setValue(this.plugin.settings.whichHeadings);
 				dropdown.onChange(value => {
 					this.plugin.settings.whichHeadings = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 
-		new Setting(containerEl)
+		this.sepSetting = new Setting(containerEl)
+			.setClass('anchor-display-text-setting-item')
 			.setName('Separator')
 			.setDesc('Choose what to insert between headings instead of #.')
 			.addText(text => {
+				this.sepInput = text.inputEl;
+				this.sepInput.setAttribute('aria-describedby', 'anchor-display-text-separator-warning');
 				text.setValue(this.plugin.settings.sep);
 				text.onChange(value => {
 					this.plugin.settings.sep = this.validateSep(value);
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
+
+		this.sepWarning = this.sepSetting.settingEl.createDiv({
+			cls: 'anchor-display-text-setting-item-error',
+		});
+		this.sepWarning.id = 'anchor-display-text-separator-warning';
+		this.sepWarning.setAttribute('role', 'alert');
+
+		this.sepWarning.createSpan({
+			text: 'Separator cannot contain any of the following: ',
+		})
+
+		this.sepWarning.createSpan({
+			text: '[]#^|',
+			cls: 'anchor-display-text-setting-item-error-code',
+		});
+
+		this.sepWarning.hide();
 
 		new Setting(containerEl)
 			.setName('Enable notifications')
@@ -339,7 +358,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.includeNotice);
 				toggle.onChange(value => {
 					this.plugin.settings.includeNotice = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 
@@ -350,7 +369,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.suggest);
 				toggle.onChange(value => {
 					this.plugin.settings.suggest = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 					if (!this.plugin.suggestionsRegistered) {
 						this.plugin.registerEditorSuggest(new AnchorDisplaySuggest(this.plugin));
 						this.plugin.suggestionsRegistered = true;
@@ -365,7 +384,7 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.ignoreEmbedded);
 				toggle.onChange(value => {
 					this.plugin.settings.ignoreEmbedded = value;
-					this.plugin.saveSettings();
+					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
 				});
 			});
 	}
