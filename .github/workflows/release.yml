@@ -18,7 +18,7 @@ jobs:
             - name: Build
               run: npm ci && npm run build
             - uses: actions/attest-build-provenance@v2
-              with: { subject-path: "main.js"}
+              with: { subject-path: "main.js, styles.css"}
             - name: Create Release
               env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
-              run: awk '/^## /{if(p)exit; p=1} p' CHANGELOG.md > release-notes && gh release create "$GITHUB_REF_NAME" main.js manifest.json styles.css --notes-file release-notes
+              run: awk '/^## /{if(p)exit; p=1} p' CHANGELOG.md > release-notes && gh release create "$GITHUB_REF_NAME" main.js manifest.json styles.css --title "$GITHUB_REF_NAME" --notes-file release-notes
