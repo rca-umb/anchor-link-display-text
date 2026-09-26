@@ -1,4 +1,4 @@
-import {App, Editor, EditorPosition, EditorSuggest, EditorSuggestTriggerInfo, Notice, Plugin, PluginSettingTab, Setting} from 'obsidian';
+import {App, Editor, EditorPosition, EditorSuggest, EditorSuggestTriggerInfo, Notice, Plugin, PluginSettingTab, Setting, SettingDefinitionItem} from 'obsidian';
 
 const RE_ANCHOR_NO_DISPLAY = /!?\[\[([^\]]+#[^|\n\r\]]+)\]\]$/;
 const RE_ANCHOR_DISPLAY = /(\[\[([^\]]+#[^\n\r\]]+)\]\])$/;
@@ -250,7 +250,6 @@ class AnchorDisplaySuggest extends EditorSuggest<AnchorDisplaySuggestion> {
 
 class AnchorDisplayTextSettingTab extends PluginSettingTab {
 	plugin: AnchorDisplayText;
-	private sepSetting: Setting | null = null;
 	private sepInput: HTMLInputElement | null = null;
 	private sepWarning: HTMLElement | null = null;
 
@@ -277,115 +276,105 @@ class AnchorDisplayTextSettingTab extends PluginSettingTab {
 		return validValue;
 	}
 
-	display(): void {
-		const {containerEl} = this;
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Include note name')
-			.setDesc('Include the title of the note in the display text.')
-			.addDropdown(dropdown => {
-				dropdown.addOption('headersOnly', 'Don\'t include note name');
-				dropdown.addOption('noteNameFirst', 'Note name and then heading(s)');
-				dropdown.addOption('noteNameLast', 'Heading(s) and then note name');
-				dropdown.setValue(this.plugin.settings.includeNoteName);
-				dropdown.onChange(value => {
-					this.plugin.settings.includeNoteName = value;
-					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
-				});
-			});
-
-		new Setting(containerEl)
-			.setName('Title property')
-			.setDesc('If set, use the value of this property as the note name. (Leave blank to use file name)')
-			.addText(text => {
-				text.setValue(this.plugin.settings.titleProperty);
-				text.onChange(value => {
-					this.plugin.settings.titleProperty = value;
-					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
-				});
-			});
-
-		new Setting(containerEl)
-			.setName('Include subheadings')
-			.setDesc('Change which headings and subheadings are in the display text.')
-			.addDropdown(dropdown => {
-				dropdown.addOption('allHeaders', 'All linked headings');
-				dropdown.addOption('lastHeader', 'Last heading only');
-				dropdown.addOption('firstHeader', 'First heading only');
-				dropdown.setValue(this.plugin.settings.whichHeadings);
-				dropdown.onChange(value => {
-					this.plugin.settings.whichHeadings = value;
-					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
-				});
-			});
-
-		this.sepSetting = new Setting(containerEl)
-			.setClass('anchor-display-text-setting-item')
-			.setName('Separator')
-			.setDesc('Choose what to insert between headings instead of #.')
-			.addText(text => {
-				this.sepInput = text.inputEl;
-				this.sepInput.setAttribute('aria-describedby', 'anchor-display-text-separator-warning');
-				text.setValue(this.plugin.settings.sep);
-				text.onChange(value => {
-					this.plugin.settings.sep = this.validateSep(value);
-					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
-				});
-			});
-
-		this.sepWarning = this.sepSetting.settingEl.createDiv({
-			cls: 'anchor-display-text-setting-item-error',
-		});
-		this.sepWarning.id = 'anchor-display-text-separator-warning';
-		this.sepWarning.setAttribute('role', 'alert');
-
-		this.sepWarning.createSpan({
-			text: 'Separator cannot contain any of the following: ',
-		})
-
-		this.sepWarning.createSpan({
-			text: '[]#^|',
-			cls: 'anchor-display-text-setting-item-error-code',
-		});
-
-		this.sepWarning.hide();
-
-		new Setting(containerEl)
-			.setName('Enable notifications')
-			.setDesc('Have a notice pop up whenever an anchor link is automatically changed.')
-			.addToggle(toggle => {
-				toggle.setValue(this.plugin.settings.includeNotice);
-				toggle.onChange(value => {
-					this.plugin.settings.includeNotice = value;
-					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
-				});
-			});
-
-		new Setting(containerEl)
-			.setName('Suggest alternatives')
-			.setDesc('Have a suggestion window to present alternative display text options when the cursor is directly after an anchor link.')
-			.addToggle(toggle => {
-				toggle.setValue(this.plugin.settings.suggest);
-				toggle.onChange(value => {
-					this.plugin.settings.suggest = value;
-					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
-					if (!this.plugin.suggestionsRegistered) {
-						this.plugin.registerEditorSuggest(new AnchorDisplaySuggest(this.plugin));
-						this.plugin.suggestionsRegistered = true;
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [
+			{
+				name: 'Include note name',
+				desc: 'Include the title of the note in the display text.',
+				control: {
+					type: 'dropdown',
+					key: 'includeNoteName',
+					options: {
+						headersOnly: 'Don\'t include note name',
+						noteNameFirst: 'Note name and then heading(s)',
+						noteNameLast: 'Heading(s) and then note name'
 					}
-				});
-			});
+				}
+			},
+			{
+				name: 'Title property',
+				desc: 'If set, use the value of this property as the note name. (Leave blank to use file name)',
+				control: {type: 'text', key: 'titleProperty'}
+			},
+			{
+				name: 'Include subheadings',
+				desc: 'Change which headings and subheadings are in the display text.',
+				control: {
+					type: 'dropdown',
+					key: 'whichHeadings',
+					options: {
+						allHeaders: 'All linked headings',
+						lastHeader: 'Last heading only',
+						firstHeader: 'First heading only'
+					}
+				}
+			},
+			{
+				name: 'Separator',
+				desc: 'Choose what to insert between headings instead of #.',
+				render: (s: Setting) => {
+					s.setClass('anchor-display-text-setting-item')
+					s.addText(text => {
+						this.sepInput = text.inputEl;
+						this.sepInput.setAttribute('aria-describedby', 'anchor-display-text-separator-warning');
+						text.setValue(this.plugin.settings.sep);
+						text.onChange(value => {
+							this.plugin.settings.sep = this.validateSep(value);
+							this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
+						});
+					});
 
-		new Setting(containerEl)
-			.setName('Ignore embedded files')
-			.setDesc('Don\'t add or change display text for embedded files.')
-			.addToggle(toggle => {
-				toggle.setValue(this.plugin.settings.ignoreEmbedded);
-				toggle.onChange(value => {
-					this.plugin.settings.ignoreEmbedded = value;
-					this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
-				});
-			});
+					this.sepWarning = s.settingEl.createDiv({
+						cls: 'anchor-display-text-setting-item-error',
+					});
+					this.sepWarning.id = 'anchor-display-text-separator-warning';
+					this.sepWarning.setAttribute('role', 'alert');
+
+					this.sepWarning.createSpan({
+						text: 'Separator cannot contain any of the following: ',
+					})
+
+					this.sepWarning.createSpan({
+						text: '[]#^|',
+						cls: 'anchor-display-text-setting-item-error-code',
+					});
+
+					this.sepWarning.hide();
+				}
+			},
+			{
+				name: 'Enable notifications',
+				desc: 'Have a notice pop up whenever an anchor link is automatically changed.',
+				control: {
+					type: 'toggle',
+					key: 'includeNotice',
+				}
+			},
+			{
+				name: 'Suggest alternatives',
+				desc: 'Have a suggestion window to present alternative display text options when the cursor is directly after an anchor link.',
+				render: (s: Setting) => {
+					s.addToggle(toggle => {
+						toggle.setValue(this.plugin.settings.suggest);
+						toggle.onChange(value => {
+							this.plugin.settings.suggest = value;
+							this.plugin.saveSettings().catch(e => console.error('Failed to save settings' + e));
+							if (!this.plugin.suggestionsRegistered) {
+								this.plugin.registerEditorSuggest(new AnchorDisplaySuggest(this.plugin));
+								this.plugin.suggestionsRegistered = true;
+							}
+						});
+					});
+				},
+			},
+			{
+				name: 'Ignore embedded files',
+				desc: 'Don\'t add or change display text for embedded files.',
+				control: {
+					type: 'toggle',
+					key: 'ignoreEmbedded',
+				}
+			}
+		]
 	}
 }
