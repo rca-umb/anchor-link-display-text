@@ -2,15 +2,9 @@
 
 This is a plugin for [Obsidian](https://obsidian.md) which automatically sets the display text of anchor links.
 
-## What's New in v1.5
+## What's New in v1.6
 
-### Changed
-
-- Illegal character warnings for separator inputs now show as an error message within the setting instead of a notification.
-
-### Fixed
-
-- Minor code changes to fix outstanding scorecard issues.
+- Settings now use the declarative settings API. For users, this means plugin settings will now be searchable. No other functionality was changed. However, as a result, future updates to this plugin will require Obsidian v1.13.0 or later.
 
 ## Description
 

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-9-26
+
+### Changed
+
+- Settings now use the declarative settings API. For users, this means plugin settings will now be searchable. No other functionality was changed. However, as a result, future updates to this plugin will require Obsidian v1.13.0 or later.
+
 ## [1.5.1] - 2026-9-19
 
 ### Fixed
